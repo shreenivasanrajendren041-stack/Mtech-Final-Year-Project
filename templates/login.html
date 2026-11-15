@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcFace Biometric Login</title>
+    <style>
+        /* Page Transition Animation Styles */
+        body {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.page-loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.page-fade-out {
+            opacity: 0;
+            transform: translateY(-12px);
+        }
+
+        :root {
+            --bg-dark: #0b1326;
+            --card-bg: #121e36;
+            --card-border: #1d2d4d;
+            --text-primary: #ffffff;
+            --text-secondary: #8a99ad;
+            --accent-cyan: #00f0ff;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
+            width: 440px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-card h2 {
+            color: var(--accent-cyan);
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 12px;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .btn-cam-toggle {
+            background: #1e293b;
+            color: var(--accent-cyan);
+            border: 1px solid #334155;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-cam-toggle:hover {
+            background: #334155;
+        }
+
+        .btn-login {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+            font-weight: 700;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-login:hover {
+            opacity: 0.9;
+        }
+
+        .reg-link {
+            display: block;
+            margin-top: 15px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .reg-link:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* MODAL POPUP STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: #0c182e;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            width: 450px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-card {
+            background: #121e36;
+            border: 1px solid #1d2d4d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        .info-card .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .info-card .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .value.green {
+            color: var(--accent-green);
+        }
+
+        .value.red {
+            color: var(--accent-red);
+        }
+
+        .value.cyan {
+            color: var(--accent-cyan);
+        }
+
+        .value.white {
+            color: #ffffff;
+        }
+
+        .badges-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .sub-badge {
+            background: #1e293b;
+            color: var(--accent-green);
+            border: 1px solid #334155;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .sub-badge.violation {
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        .btn-proceed {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+            font-size: 0.95rem;
+        }
+
+        .btn-proceed.success {
+            background: var(--accent-green);
+            color: #fff;
+        }
+
+        .btn-proceed.failed {
+            background: var(--accent-red);
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-card">
+        <h2>Biometric Face Login</h2>
+        <div class="video-wrapper">
+            <video id="webcam" autoplay playsinline muted></video>
+        </div>
+        <button class="btn-cam-toggle" id="camToggleBtn" onclick="toggleCamera()">Turn Camera OFF</button>
+        <button class="btn-login" onclick="captureAndAuthenticate()">Login with Face</button>
+        <a href="/register" class="reg-link">Don't have an account? Register Here</a>
+    </div>
+
+    <!-- POPUP MODAL -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-card">
+            <div class="info-card">
+                <div class="label">AUTHENTICATION RESULT</div>
+                <div class="value" id="modalAuthResult">Checking...</div>
+            </div>
+            <div class="info-card">
+                <div class="label">IDENTIFIED PROFILE</div>
+                <div class="value cyan" id="modalProfileId">—</div>
+            </div>
+            <div class="info-card">
+                <div class="label">SECURITY STATUS / VARIANTS</div>
+                <div class="value white" id="modalSpectacleVariant">—</div>
+            </div>
+            <div class="info-card">
+                <div class="label">ARCFACE MATCH SIMILARITY</div>
+                <div class="value white" id="modalSimilarity">0.0000</div>
+            </div>
+            <div class="info-card">
+                <div class="label">ANTI-FRAUD / HACKER SHIELD</div>
+                <div class="value white" style="font-size: 1.1rem;">Liveness & Mask Check</div>
+                <div class="badges-row" id="badgeRow">
+                    <span class="sub-badge" id="badgeMask">Mask Free: OK</span>
+                </div>
+            </div>
+            <button class="btn-proceed" id="modalActionBtn" onclick="handleModalClose()">Proceed to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        let cameraStream = null;
+        let isCameraOn = false;
+        let nextRedirectUrl = null;
+
+        async function toggleCamera() {
+            const toggleBtn = document.getElementById('camToggleBtn');
+            if (isCameraOn) {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                }
+                video.srcObject = null;
+                isCameraOn = false;
+                toggleBtn.innerText = "Turn Camera ON";
+                toggleBtn.style.color = "var(--accent-red)";
+            } else {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 640 }, height: { ideal: 480 } }
+                    });
+                    video.srcObject = cameraStream;
+                    isCameraOn = true;
+                    toggleBtn.innerText = "Turn Camera OFF";
+                    toggleBtn.style.color = "var(--accent-cyan)";
+                } catch (e) {
+                    alert("Unable to access camera. Please check permissions.");
+                }
+            }
+        }
+
+        async function captureAndAuthenticate() {
+            if (!isCameraOn || !video.videoWidth) {
+                alert("Please turn on the camera before logging in.");
+                return;
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            const imageData = tempCanvas.toDataURL('image/jpeg', 0.8);
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData })
+                });
+
+                const data = await res.json();
+                showResultModal(data);
+            } catch (err) {
+                console.error("Authentication error:", err);
+            }
+        }
+
+        function showResultModal(data) {
+            const modal = document.getElementById('resultModal');
+            const authElem = document.getElementById('modalAuthResult');
+            const profileElem = document.getElementById('modalProfileId');
+            const specElem = document.getElementById('modalSpectacleVariant');
+            const simElem = document.getElementById('modalSimilarity');
+            const btnElem = document.getElementById('modalActionBtn');
+            const badgeMask = document.getElementById('badgeMask');
+
+            authElem.innerText = data.auth_result;
+            profileElem.innerText = data.identified_profile;
+            specElem.innerText = data.spectacle_variant;
+            simElem.innerText = data.similarity_score;
+
+            if (data.auth_result && data.auth_result.includes('Mask')) {
+                badgeMask.innerText = 'Mask Detected (Violation)';
+                badgeMask.className = 'sub-badge violation';
+            } else {
+                badgeMask.innerText = 'Mask Free: OK';
+                badgeMask.className = 'sub-badge';
+            }
+
+            if (data.status === 'SUCCESS') {
+                authElem.className = 'value green';
+                btnElem.className = 'btn-proceed success';
+                btnElem.innerText = 'Close & Proceed to Dashboard';
+                nextRedirectUrl = data.redirect;
+            } else {
+                authElem.className = 'value red';
+                btnElem.className = 'btn-proceed failed';
+                btnElem.innerText = 'Close & Try Again';
+                nextRedirectUrl = null;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function handleModalClose() {
+            document.getElementById('resultModal').style.display = 'none';
+            if (nextRedirectUrl) {
+                window.location.href = nextRedirectUrl;
+            }
+        }
+
+        window.onload = toggleCamera;
+        document.addEventListener("DOMContentLoaded", function () {
+            // Trigger fade-in animation on page load
+            document.body.classList.add("page-loaded");
+
+            // Intercept internal link clicks for smooth exit transition
+            const internalLinks =
+                document.querySelectorAll("a:not([target='_blank']):not([href^='#']):not([href^='javascript:'])");
+
+            internalLinks.forEach(link => {
+                link.addEventListener("click", function (e) {
+                    const href = this.getAttribute("href");
+                    if (href && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
+                        e.preventDefault();
+                        document.body.classList.remove("page-loaded");
+                        document.body.classList.add("page-fade-out");
+
+                        // Wait for animation to finish before navigating (450ms)
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 400);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
