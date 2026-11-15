@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration - ArcFace MFA</title>
+    <style>
+        /* Page Transition Animation Styles */
+        body {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.page-loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.page-fade-out {
+            opacity: 0;
+            transform: translateY(-12px);
+        }
+
+        :root {
+            --bg-dark: #0b1326;
+            --card-bg: #121e36;
+            --card-border: #1d2d4d;
+            --text-primary: #ffffff;
+            --text-secondary: #8a99ad;
+            --accent-cyan: #00f0ff;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .reg-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
+            width: 440px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .reg-card h2 {
+            color: var(--accent-cyan);
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 10px;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .btn-cam-toggle {
+            background: #1e293b;
+            color: var(--accent-cyan);
+            border: 1px solid #334155;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-cam-toggle:hover {
+            background: #334155;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        input {
+            background: #0b1326;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            width: 100%;
+        }
+
+        input:focus {
+            border-color: var(--accent-cyan);
+            outline: none;
+        }
+
+        .otp-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            font-weight: 700;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        .btn-otp {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+            white-space: nowrap;
+        }
+
+        .btn-register {
+            background: var(--accent-green);
+            color: #fff;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.05rem;
+            margin-top: 5px;
+        }
+
+        .status-msg {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            min-height: 20px;
+            font-weight: 600;
+        }
+
+        .status-msg.success {
+            color: var(--accent-green);
+        }
+
+        .status-msg.error {
+            color: var(--accent-red);
+        }
+
+        .status-msg.info {
+            color: var(--accent-cyan);
+        }
+
+        .resend-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            margin-top: -6px;
+            margin-bottom: 10px;
+        }
+
+        .btn-resend {
+            background: none;
+            border: none;
+            color: var(--accent-cyan);
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.8rem;
+        }
+
+        .btn-resend:hover {
+            color: #fff;
+        }
+
+        .login-link {
+            display: block;
+            margin-top: 15px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .login-link:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* Success Notification Modal Popup Overlay */
+        #success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border: 2px solid var(--accent-green);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-box h3 {
+            color: var(--accent-green);
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-box p {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-box button {
+            background: var(--accent-green);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .modal-box button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="reg-card">
+        <h2>User Registration</h2>
+
+        <div class="video-wrapper">
+            <video id="webcam" autoplay playsinline muted></video>
+        </div>
+        <button class="btn-cam-toggle" id="camToggleBtn" onclick="toggleCamera()">Turn Camera OFF</button>
+
+        <div class="input-group">
+            <input type="text" id="personId" placeholder="Enter Person ID (e.g., pers26)">
+
+            <div class="otp-row">
+                <input type="text" id="contactInput" placeholder="Enter Email or Phone Number">
+                <button class="btn-action btn-otp" onclick="requestOtp()">Send OTP</button>
+            </div>
+
+            <div class="resend-container">
+                <span id="timerText">OTP delivered within 1 min</span>
+                <button class="btn-resend" onclick="requestOtp()">Resend OTP</button>
+            </div>
+
+            <input type="text" id="otpInput" placeholder="Enter 6-digit OTP Code">
+        </div>
+
+        <div class="status-msg" id="statusMessage"></div>
+
+        <button class="btn-action btn-register" onclick="registerAccount()">Register Account</button>
+        <a href="/login" class="login-link">Back to Login</a>
+    </div>
+
+    <!-- Success Popup Modal Notification -->
+    <div id="success-modal">
+        <div class="modal-box">
+            <h3>Registered Successfully!</h3>
+            <p>Your user profile and embeddings have been successfully created.</p>
+            <button onclick="window.location.href='/login'">Proceed to Login</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        let cameraStream = null;
+        let isCameraOn = false;
+
+        async function toggleCamera() {
+            const toggleBtn = document.getElementById('camToggleBtn');
+            if (isCameraOn) {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                }
+                video.srcObject = null;
+                isCameraOn = false;
+                toggleBtn.innerText = "Turn Camera ON";
+                toggleBtn.style.color = "var(--accent-red)";
+            } else {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 640 }, height: { ideal: 480 } }
+                    });
+                    video.srcObject = cameraStream;
+                    isCameraOn = true;
+                    toggleBtn.innerText = "Turn Camera OFF";
+                    toggleBtn.style.color = "var(--accent-cyan)";
+                } catch (e) {
+                    alert("Unable to access camera. Please check permissions.");
+                }
+            }
+        }
+
+        async function requestOtp() {
+            const contact = document.getElementById('contactInput').value.trim();
+            const statusMsg = document.getElementById('statusMessage');
+
+            if (!contact) {
+                statusMsg.className = 'status-msg error';
+                statusMsg.innerText = 'Please enter your email or phone number first.';
+                return;
+            }
+
+            statusMsg.className = 'status-msg info';
+            statusMsg.innerText = 'Sending OTP (dispatched within 1 min)...';
+
+            try {
+                const res = await fetch('/api/send_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contact: contact })
+                });
+                const data = await res.json();
+
+                if (data.status === 'SUCCESS') {
+                    statusMsg.className = 'status-msg success';
+                    statusMsg.innerText = data.message;
+                } else {
+                    statusMsg.className = 'status-msg error';
+                    statusMsg.innerText = data.message;
+                }
+            } catch (err) {
+                statusMsg.className = 'status-msg error';
+                statusMsg.innerText = 'Network error while requesting OTP.';
+            }
+        }
+
+        async function registerAccount() {
+            const personId = document.getElementById('personId').value.trim();
+            const contact = document.getElementById('contactInput').value.trim();
+            const otp = document.getElementById('otpInput').value.trim();
+            const statusMsg = document.getElementById('statusMessage');
+
+            if (!personId || !contact || !otp) {
+                statusMsg.className = 'status-msg error';
+                statusMsg.innerText = 'Please complete all fields and verify with OTP.';
+                return;
+            }
+
+            if (!isCameraOn || !video.videoWidth) {
+                statusMsg.className = 'status-msg error';
+                statusMsg.innerText = 'Please turn on the camera to capture face image.';
+                return;
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            const imageData = tempCanvas.toDataURL('image/jpeg', 0.8);
+
+            statusMsg.className = 'status-msg info';
+            statusMsg.innerText = 'Processing registration and saving embeddings...';
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        person_id: personId,
+                        contact: contact,
+                        otp: otp,
+                        image: imageData
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.status === 'SUCCESS') {
+                    statusMsg.className = 'status-msg success';
+                    statusMsg.innerText = data.message;
+                    // Display Success Popup Modal Notification
+                    document.getElementById('success-modal').style.display = 'flex';
+                } else {
+                    statusMsg.className = 'status-msg error';
+                    statusMsg.innerText = data.message;
+                }
+            } catch (err) {
+                statusMsg.className = 'status-msg error';
+                statusMsg.innerText = 'Registration failed due to network error.';
+            }
+        }
+
+        window.onload = toggleCamera;
+        document.addEventListener("DOMContentLoaded", function () {
+            // Trigger fade-in animation on page load
+            document.body.classList.add("page-loaded");
+
+            // Intercept internal link clicks for smooth exit transition
+            const internalLinks = document.querySelectorAll("a:not([target='_blank']):not([href^='#']):not([href^='javascript:'])");
+
+            internalLinks.forEach(link => {
+                link.addEventListener("click", function (e) {
+                    const href = this.getAttribute("href");
+                    if (href && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
+                        e.preventDefault();
+                        document.body.classList.remove("page-loaded");
+                        document.body.classList.add("page-fade-out");
+
+                        // Wait for animation to finish before navigating (400ms)
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 400);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

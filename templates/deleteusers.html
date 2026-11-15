@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Users - ArcFace MFA</title>
+    <style>
+        /* Page Transition Animation Styles */
+        body {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.page-loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.page-fade-out {
+            opacity: 0;
+            transform: translateY(-12px);
+        }
+
+        :root {
+            --bg-dark: #0b1326;
+            --card-bg: #121e36;
+            --card-border: #1d2d4d;
+            --text-primary: #ffffff;
+            --text-secondary: #8a99ad;
+            --accent-cyan: #00f0ff;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR STYLES */
+        .sidebar {
+            width: 260px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .sidebar h3 {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .sidebar a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #1e293b;
+            color: var(--accent-cyan);
+        }
+
+        .sidebar .logout {
+            margin-top: auto;
+            color: var(--accent-red);
+        }
+
+        .sidebar .logout:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+        }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 750px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .container h2 {
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            font-size: 1.5rem;
+        }
+
+        .container p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .user-id-badge {
+            color: var(--accent-cyan);
+        }
+
+        .btn-delete {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-delete:hover {
+            opacity: 0.85;
+        }
+
+        .msg {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            min-height: 20px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <div class="sidebar">
+        <h3>ArcFace MFA Panel</h3>
+        <a href="/dashboard">Dashboard</a>
+        <!-- Make sure this href matches your app.py route -->
+        <a href="/deleteusers" class="active">Delete Users</a>
+        <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <!-- MAIN VIEW -->
+    <div class="main-content">
+        <div class="container">
+            <h2>Registered Users Directory</h2>
+            <p>View active database profiles and securely remove registered face embeddings if needed.</p>
+
+            <div id="statusMsg" class="msg"></div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Person ID / Profile</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr id="row-{{ user }}">
+                        <td><span class="user-id-badge">{{ user }}</span></td>
+                        <td>
+                            <button class="btn-delete" onclick="deleteUser('{{ user }}')">🗑️</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+                            No registered users found in the database.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function deleteUser(personId) {
+            if (!confirm(`Are you sure you want to permanently delete profile "${personId}" from the database?`)) {
+                return;
+            }
+
+            const statusMsg = document.getElementById('statusMsg');
+            statusMsg.style.display = 'block';
+            statusMsg.style.background = 'rgba(0, 240, 255, 0.1)';
+            statusMsg.style.border = '1px solid var(--accent-cyan)';
+            statusMsg.style.color = 'var(--accent-cyan)';
+            statusMsg.innerText = `Removing user ${personId}...`;
+
+            try {
+                const res = await fetch('/api/delete-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target_user: personId })
+                });
+                const data = await res.json();
+
+                if (data.status === 'SUCCESS') {
+                    statusMsg.style.background = 'rgba(34, 197, 94, 0.15)';
+                    statusMsg.style.border = '1px solid var(--accent-green)';
+                    statusMsg.style.color = 'var(--accent-green)';
+                    statusMsg.innerText = `Success: User "${personId}" has been deleted permanently. Refreshing...`;
+
+                    // Remove row from table immediately
+                    const row = document.getElementById(`row-${personId}`);
+                    if (row) row.remove();
+
+                    // Automatically refresh the page after 1.2 seconds to reflect updated directory
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1200);
+
+                } else {
+                    statusMsg.style.background = 'rgba(239, 68, 68, 0.15)';
+                    statusMsg.style.border = '1px solid var(--accent-red)';
+                    statusMsg.style.color = 'var(--accent-red)';
+                    statusMsg.innerText = data.message || 'Error deleting user.';
+                }
+            } catch (err) {
+                statusMsg.style.display = 'block';
+                statusMsg.style.background = 'rgba(239, 68, 68, 0.15)';
+                statusMsg.style.border = '1px solid var(--accent-red)';
+                statusMsg.style.color = 'var(--accent-red)';
+                statusMsg.innerText = 'Network error while attempting to delete user.';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Trigger fade-in animation on page load
+            document.body.classList.add("page-loaded");
+
+            // Intercept internal link clicks for smooth exit transition
+            const internalLinks =
+                document.querySelectorAll("a:not([target='_blank']):not([href^='#']):not([href^='javascript:'])");
+
+            internalLinks.forEach(link => {
+                link.addEventListener("click", function (e) {
+                    const href = this.getAttribute("href");
+                    if (href && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
+                        e.preventDefault();
+                        document.body.classList.remove("page-loaded");
+                        document.body.classList.add("page-fade-out");
+
+                        // Wait for animation to finish before navigating (450ms)
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 400);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

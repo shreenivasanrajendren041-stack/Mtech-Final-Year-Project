@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - ArcFace Verification</title>
+    <style>
+        /* Page Transition Animation Styles */
+        body {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.page-loaded {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.page-fade-out {
+            opacity: 0;
+            transform: translateY(-12px);
+        }
+
+        :root {
+            --bg-dark: #0b1326;
+            --card-bg: #121e36;
+            --card-border: #1d2d4d;
+            --text-primary: #ffffff;
+            --text-secondary: #8a99ad;
+            --accent-cyan: #00f0ff;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR STYLES */
+        .sidebar {
+            width: 260px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .sidebar h3 {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .sidebar a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #1e293b;
+            color: var(--accent-cyan);
+        }
+
+        .sidebar .logout {
+            margin-top: auto;
+            color: var(--accent-red);
+        }
+
+        .sidebar .logout:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--accent-green);
+            font-size: 2rem;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
+            width: 480px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .user-info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            background: #0b1326;
+            border: 1px solid #1d2d4d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-row .label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .info-row .value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .value.cyan {
+            color: var(--accent-cyan);
+        }
+
+        .value.green {
+            color: var(--accent-green);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h3>ArcFace MFA Panel</h3>
+        <a href="/dashboard" class="active">Dashboard</a>
+        <a href="/deleteusers">Delete Users</a>
+        <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Authenticated User Dashboard</h1>
+            <p>Access Granted via Biometric & Eyewear Rule Enforcement</p>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="user-info-group">
+                <div class="info-row">
+                    <span class="label">Identified Profile</span>
+                    <span class="value cyan">{{ user_id }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="label">Eyewear Cohort Status</span>
+                    <span class="value green">{{ spectacle_variant }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="label">ArcFace Similarity Score</span>
+                    <span class="value cyan">{{ similarity }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="label">Session Integrity</span>
+                    <span class="value green">Active & Verified</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Trigger fade-in animation on page load
+            document.body.classList.add("page-loaded");
+
+            // Intercept internal link clicks for smooth exit transition
+            const internalLinks =
+                document.querySelectorAll("a:not([target='_blank']):not([href^='#']):not([href^='javascript:'])");
+
+            internalLinks.forEach(link => {
+                link.addEventListener("click", function (e) {
+                    const href = this.getAttribute("href");
+                    if (href && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
+                        e.preventDefault();
+                        document.body.classList.remove("page-loaded");
+                        document.body.classList.add("page-fade-out");
+
+                        // Wait for animation to finish before navigating (450ms)
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 400);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
