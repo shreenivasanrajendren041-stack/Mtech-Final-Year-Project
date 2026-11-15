@@ -1,0 +1,3 @@
+Human Chin Dataset -> https://www.kaggle.com/datasets/shreenivasan2001/human-chindataset
+Human Nose Dataset -> https://www.kaggle.com/datasets/shreenivasan2001/humannose-dataset
+Human Iris Dataset -> https://www.kaggle.com/datasets/unidpro/human-iris-images-biometric
